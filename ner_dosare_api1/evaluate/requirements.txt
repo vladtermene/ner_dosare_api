@@ -1,0 +1,10 @@
+torch
+transformers
+nervaluate
+progress
+pytorch_lightning
+tokenizers
+stanza
+wandb
+uvicorn
+fastapi

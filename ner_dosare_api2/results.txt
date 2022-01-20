@@ -1,0 +1,105 @@
+1) O singura antrenare
+ Test results: 
+
+{'actual': 951,
+ 'correct': 860,
+ 'f1': 0.9071729957805907,
+ 'incorrect': 69,
+ 'missed': 16,
+ 'partial': 0,
+ 'possible': 945,
+ 'precision': 0.9043112513144059,
+ 'recall': 0.91005291005291,
+ 'spurious': 22}
+
+ Per class Strict-F1 values:
+	 Locatie_PJ : 	0.945
+	 O : 	0.000
+	 PF : 	0.963
+	 PF_delegat : 	0.750
+	 PF_reprezentat : 	0.928
+	 PJ : 	0.865
+	 PJ_delegat : 	0.900
+	 PJ_reprezentat : 	0.909
+	 STAT : 	0.830
+	 STAT_delegat : 	0.857
+	 STAT_reprezentat : 	0.833
+Testing: 100% 24/24 [00:05<00:00,  4.50it/s]--------------------------------------------------------------------------------
+DATALOADER:0 TEST RESULTS
+{'test/avg_loss': 0.3968406021595001,
+ 'test/ent_type': 0.9282700419425964,
+ 'test/exact': 0.9419831037521362,
+ 'test/partial': 0.9609704613685608,
+ 'test/strict': 0.9071729779243469}
+--------------------------------------------------------------------------------
+Testing: 100% 24/24 [00:05<00:00,  4.65it/s]
+
+
+2) 
+a) Antrenare 1
+Test results: 
+
+{'actual': 955,
+ 'correct': 869,
+ 'f1': 0.9186046511627907,
+ 'incorrect': 60,
+ 'missed': 8,
+ 'partial': 0,
+ 'possible': 937,
+ 'precision': 0.9099476439790576,
+ 'recall': 0.927427961579509,
+ 'spurious': 26}
+
+ Per class Strict-F1 values:
+	 Locatie_PJ : 	0.887
+	 O : 	0.000
+	 PF : 	0.979
+	 PJ : 	0.896
+	 STAT : 	0.809
+Testing: 100% 24/24 [00:04<00:00,  5.88it/s]--------------------------------------------------------------------------------
+DATALOADER:0 TEST RESULTS
+{'test/avg_loss': 0.23413428664207458,
+ 'test/ent_type': 0.9566596150398254,
+ 'test/exact': 0.9365750551223755,
+ 'test/partial': 0.9593023061752319,
+ 'test/strict': 0.9186046719551086}
+--------------------------------------------------------------------------------
+Testing: 100% 24/24 [00:04<00:00,  5.98it/s]
+
+b) Antrenare 2
+Test results: 
+
+{'actual': 950,
+ 'correct': 888,
+ 'f1': 0.937203166226913,
+ 'incorrect': 46,
+ 'missed': 11,
+ 'partial': 0,
+ 'possible': 945,
+ 'precision': 0.9347368421052632,
+ 'recall': 0.9396825396825397,
+ 'spurious': 16}
+
+ Per class Strict-F1 values:
+	 Locatie_PJ : 	0.950
+	 O : 	0.000
+	 PF : 	0.972
+	 PF_delegat : 	0.772
+	 PF_reprezentat : 	0.941
+	 PJ : 	0.938
+	 PJ_delegat : 	0.911
+	 PJ_reprezentat : 	0.844
+	 STAT : 	0.896
+	 STAT_delegat : 	1.000
+	 STAT_reprezentat : 	0.815
+Testing: 100% 24/24 [00:04<00:00,  5.46it/s]--------------------------------------------------------------------------------
+DATALOADER:0 TEST RESULTS
+{'test/avg_loss': 0.16879414021968842,
+ 'test/ent_type': 0.9614775776863098,
+ 'test/exact': 0.9583113193511963,
+ 'test/partial': 0.9720316529273987,
+ 'test/strict': 0.9372031688690186}
+--------------------------------------------------------------------------------
+Testing: 100% 24/24 [00:04<00:00,  5.70it/s]
+
+Done training.
