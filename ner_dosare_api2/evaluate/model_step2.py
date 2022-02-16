@@ -206,8 +206,12 @@ class TransformerModel(pl.LightningModule):
     def predict(self, input_string):
         self.eval()
         self.freeze()
-        input_ids = self.tokenizer.encode(input_string, add_special_tokens=True)
-        #print(input_ids)
+        # input_ids = self.tokenizer.encode(input_string, add_special_tokens=True)
+
+        tokenized_text = self.tokenizer(mo_text, add_special_tokens=True, return_offsets_mapping=True)
+        input_ids = tokenized_text['input_ids']
+        tokens = self.tokenizer.convert_ids_to_tokens(tokids)
+        offset_mapping = tokenized_text['offset_mapping']
 
         # convert to tensors & run the model
         prepared_input_ids = torch.LongTensor(input_ids).unsqueeze(dim=0).to(self.device) # because batch_size = 1
@@ -219,13 +223,14 @@ class TransformerModel(pl.LightningModule):
         indices = torch.argmax(logits.detach().cpu(), dim=-1).squeeze(dim=0).tolist()  # reduce to [batch_size, seq_len] as list
 
         results = []
-        for id, ind in zip(input_ids, indices):
+        for idx, tok_id, ind in enumerate(zip(input_ids, indices)):
             #print(f"\t[{self.tokenizer.decode(id)}] -> {self.bio2tag_list[ind]}")
             results.append({
-                "token_id": id,
-                "token": self.tokenizer.decode(id),
+                "token_id": tok_id,
+                "token": tokens[idx],
                 "tag_id": ind,
-                "tag": self.bio2tag_list[ind]
+                "tag": self.bio2tag_list[ind],
+                "offset_mapping": offset_mapping[idx]
             })
         return results
 

@@ -1,0 +1,10 @@
+ner_dosare_venv/
+ronec_v1/
+data/
+dosare/
+trained_model/dosare_step1/
+
+*.zip
+*.ipynb
+__pycache__
+.ipynb_checkpoints/
