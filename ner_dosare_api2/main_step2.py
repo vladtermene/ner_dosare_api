@@ -1,3 +1,4 @@
+from html import entities
 import json
 import logging
 from logging.handlers import RotatingFileHandler
@@ -37,10 +38,13 @@ async def inference_dosar(dosar: Dosar):
 
     tokens = []
     tags =[]
+    offset_mapping = []
 
+    # Tokens + Tags
     for result in results:
         if len(result['token']) > 2 and result['token'][0:2] == '##':
             tokens[-1] += result['token'][2:]
+            offset_mapping[-1][1] = result['offset_mapping'][1]
 
             isLastTagO = len(tags[-1]) < 2
             isCurrTag0 = len(result['tag']) < 2
@@ -62,10 +66,36 @@ async def inference_dosar(dosar: Dosar):
         else:
             tokens.append(result['token'])
             tags.append(result['tag'])
+            offset_mapping.append([result['offset_mapping'][0],result['offset_mapping'][1]])
 
+    # Entities
+    entities = {}
+    last_entity = ''
+    last_idx = 0
+
+    for i in range(len(tags)):
+        if len(tags[i]) > 1:
+            idx_start, idx_end = offset_mapping[i]
+
+            if tags[i][0] == 'B' or last_entity != tags[i][2:]:
+                if tags[i][2:] not in entities:
+                    entities[tags[i][2:]] = []
+                entities[tags[i][2:]].append(sentence[idx_start:idx_end])
+            else:
+                if tags[i][2:] not in entities:
+                    # Nu ar trb sa intre pe aici tho
+                    # LOGGER.error('EROARE. Nu ar trebui sa intre in aceasta parte de cod.')
+                    entities[tags[i][2:]] = ['']
+                entities[tags[i][2:]][-1] = entities[tags[i][2:]][-1] + sentence[last_idx:idx_start] + sentence[idx_start:idx_end]
+
+            last_entity = tags[i][2:]
+            last_idx = idx_end
+
+    # Create the response body
     response_json = {
         'tokens': tokens,
-        'tags': tags
+        'tags': tags,
+        'entities': entities
     }
 
     return JSONResponse(status_code=200, content=response_json)
