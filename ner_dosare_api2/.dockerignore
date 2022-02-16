@@ -6,5 +6,7 @@ trained_model/dosare_step1/
 
 *.zip
 *.ipynb
-__pycache__
+__pycache__/
 .ipynb_checkpoints/
+results.txt
+README.md
