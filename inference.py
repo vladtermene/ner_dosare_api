@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from typing import List, Optional
 from pydantic import BaseModel
 
-from evaluate.model_step2 import TransformerModel
+from model_step2 import TransformerModel
 
 
 class Dosar(BaseModel):
@@ -22,7 +22,7 @@ async def startup_event():
     global model
 
     device = "cpu"
-    model = TransformerModel.load("trained_model/dosare_step2/")
+    model = TransformerModel.load("trained_models/trained_model2/")
     model.set_device(device)
 
 @app.on_event("shutdown")
