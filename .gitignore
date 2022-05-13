@@ -1,0 +1,8 @@
+__pycache__/
+data/
+dosare/
+ner_dosare_venv/
+
+trained_models/
+
+dosare.zip

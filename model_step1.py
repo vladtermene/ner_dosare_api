@@ -21,6 +21,7 @@ class TransformerModel(pl.LightningModule):
             self.tokenizer_name = model_name
 
         print("Loading AutoModel [{}] ...".format(model_name))
+        print("Model output size is {}".format(len(bio2tag_list)))
         self.model_name = model_name
         self.tokenizer = AutoTokenizer.from_pretrained(self.tokenizer_name, strip_tokens=False)
         self.model = AutoModelForTokenClassification.from_pretrained(self.model_name, num_labels=len(bio2tag_list))
@@ -233,7 +234,7 @@ class TransformerModel(pl.LightningModule):
         self.save()
 
     def save(self):
-        folder = "trained_model"
+        folder = "trained_model1"
         obj = {
             "model_name": self.model_name,
             "tokenizer_name": self.tokenizer_name,
@@ -248,7 +249,7 @@ class TransformerModel(pl.LightningModule):
         torch.save(obj, folder+"/data.bin")
         print(f"Model saved in '{folder}'.")
 
-    def load(folder = "trained_model"):
+    def load(folder = "trained_model1"):
         obj = torch.load(folder+"/data.bin")
 
         model = TransformerModel(
@@ -409,7 +410,7 @@ def train_model(
 
     # deduce bio2 tag mapping and simple tag list, required by nervaluate
     tags = []  # tags without the B- or I- prefix
-    bio2tags = ["*"]*21 # tags with the B- and I- prefix, all tags are here (30 + 1='O')
+    bio2tags = ["*"]*9 # tags with the B- and I- prefix, all tags are here (30 + 1='O')
     for instance in train_data + validation_data + test_data:
         for tag, id in zip(instance["ner_tags"], instance["ner_ids"]):
             bio2tags[id] = tag
@@ -458,7 +459,7 @@ def train_model(
     checkpoint_callback = ModelCheckpoint(
         monitor="valid/strict",
         dirpath="model",
-        filename="NERModel",
+        filename="NERModel_part1",
         save_top_k=1,
         mode='max'
     )
@@ -494,8 +495,7 @@ if __name__ == "__main__":
     parser.add_argument('--gpus', type=int, default=0) #default = 1
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--accumulate_grad_batches', type=int, default=1)
-    parser.add_argument('--model_name', type=str,
-                        default="dumitrescustefan/bert-base-romanian-cased-v1")
+    parser.add_argument('--model_name', type=str, default="dumitrescustefan/bert-base-romanian-cased-v1")
     parser.add_argument('--tokenizer_name', type=str, default="")
     parser.add_argument("--dataset_name", type=str, default="")
     parser.add_argument("--train_file", type=str, default="../data/train.json")

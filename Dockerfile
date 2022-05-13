@@ -11,4 +11,4 @@ COPY . .
 
 EXPOSE 8001
 
-CMD ["sh", "start_step2.sh"]
+CMD ["sh", "start.sh"]

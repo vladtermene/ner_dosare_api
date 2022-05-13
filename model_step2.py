@@ -11,8 +11,8 @@ import numpy as np
 
 
 class TransformerModel(pl.LightningModule):
-    def __init__(self, model_name="dumitrescustefan/bert-base-romanian-cased-v1", tokenizer_name=None, lr=2e-05,
-                 model_max_length=512, bio2tag_list=[], tag_list=[]):
+    def __init__(self, model_name="trained_model/dosare_step1/model", tokenizer_name="dumitrescustefan/bert-base-romanian-cased-v1", 
+                 lr=2e-05, model_max_length=512, bio2tag_list=[], tag_list=[]):
         super().__init__()
         self.save_hyperparameters()
 
@@ -21,10 +21,9 @@ class TransformerModel(pl.LightningModule):
             self.tokenizer_name = model_name
 
         print("Loading AutoModel [{}] ...".format(model_name))
-        print("Model output size is {}".format(len(bio2tag_list)))
         self.model_name = model_name
         self.tokenizer = AutoTokenizer.from_pretrained(self.tokenizer_name, strip_tokens=False)
-        self.model = AutoModelForTokenClassification.from_pretrained(self.model_name, num_labels=len(bio2tag_list))
+        self.model = AutoModelForTokenClassification.from_pretrained(self.model_name, num_labels=len(bio2tag_list), ignore_mismatched_sizes=True)
                     # id2label (Dict[int, str], optional) – A map from index (for instance prediction index, or target index) to label.
                     # label2id (Dict[str, int], optional) – A map from label to index for the model.
         # self.dropout = nn.Dropout(0.2)
@@ -207,8 +206,12 @@ class TransformerModel(pl.LightningModule):
     def predict(self, input_string):
         self.eval()
         self.freeze()
-        input_ids = self.tokenizer.encode(input_string, add_special_tokens=True)
-        #print(input_ids)
+        # input_ids = self.tokenizer.encode(input_string, add_special_tokens=True)
+
+        tokenized_text = self.tokenizer(input_string, add_special_tokens=True, return_offsets_mapping=True)
+        input_ids = tokenized_text['input_ids']
+        tokens = self.tokenizer.convert_ids_to_tokens(input_ids)
+        offset_mapping = tokenized_text['offset_mapping']
 
         # convert to tensors & run the model
         prepared_input_ids = torch.LongTensor(input_ids).unsqueeze(dim=0).to(self.device) # because batch_size = 1
@@ -220,13 +223,13 @@ class TransformerModel(pl.LightningModule):
         indices = torch.argmax(logits.detach().cpu(), dim=-1).squeeze(dim=0).tolist()  # reduce to [batch_size, seq_len] as list
 
         results = []
-        for id, ind in zip(input_ids, indices):
-            #print(f"\t[{self.tokenizer.decode(id)}] -> {self.bio2tag_list[ind]}")
+        for idx, (tok_id, ind) in enumerate(zip(input_ids, indices)):
             results.append({
-                "token_id": id,
-                "token": self.tokenizer.decode(id),
+                "token_id": tok_id,
+                "token": tokens[idx],
                 "tag_id": ind,
-                "tag": self.bio2tag_list[ind]
+                "tag": self.bio2tag_list[ind],
+                "offset_mapping": offset_mapping[idx]
             })
         return results
 
@@ -234,7 +237,7 @@ class TransformerModel(pl.LightningModule):
         self.save()
 
     def save(self):
-        folder = "trained_model"
+        folder = "trained_model2"
         obj = {
             "model_name": self.model_name,
             "tokenizer_name": self.tokenizer_name,
@@ -401,16 +404,15 @@ def train_model(
     # load data
     # import random
     with open(train_file, "r", encoding="utf8") as f:
-        train_data = json.load(f)#[:1000]
+        train_data = json.load(f)
     with open(validation_file, "r", encoding="utf8") as f:
-        validation_data = json.load(f)#[:100]
+        validation_data = json.load(f)
     with open(test_file, "r", encoding="utf8") as f:
-        test_data = json.load(f)#[:1]
-    # train_data += test_data
+        test_data = json.load(f)
 
     # deduce bio2 tag mapping and simple tag list, required by nervaluate
     tags = []  # tags without the B- or I- prefix
-    bio2tags = ["*"]*9 # tags with the B- and I- prefix, all tags are here (30 + 1='O')
+    bio2tags = ["*"]*21 # tags with the B- and I- prefix, all tags are here (30 + 1='O')
     for instance in train_data + validation_data + test_data:
         for tag, id in zip(instance["ner_tags"], instance["ner_ids"]):
             bio2tags[id] = tag
@@ -459,7 +461,7 @@ def train_model(
     checkpoint_callback = ModelCheckpoint(
         monitor="valid/strict",
         dirpath="model",
-        filename="NERModel_part1",
+        filename="NERModel",
         save_top_k=1,
         mode='max'
     )
@@ -524,11 +526,10 @@ if __name__ == "__main__":
         lr=args.lr
     )
 
-
     # this is how to run
     # device = "cuda" # or "cpu"
     # device = "cpu"
-    # model = TransformerModel.load()
+    # model = TransformerModel.load('trained_model/dosare_step1')
     # model.set_device(device)
 
     # sentence = "Din 2017, când a început procesul de transformare a fabricii din Otopeni, până în prezent, Philip Morris International (PMI) a investit 500 de milioane de dolari pentru dezvoltarea capacităților de producție, formarea angajaților și implementarea unor soluții care vizează sustenabilitatea. Din această sumă, aproape 100 de milioane de dolari au fost investiți doar în 2021, iar în perioada 2022-2023, PMI va mai investi peste 100 de milioane de dolari."
