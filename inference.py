@@ -14,6 +14,20 @@ class Dosar(BaseModel):
     text: str
 
 
+def clean_text(text):
+    text = text.lower()
+
+    text = text.replace('Ţ', 'Ț')
+    text = text.replace('ţ', 'ț')
+    text = text.replace('–', '-')
+    text = text.replace('Ş', 'Ș')
+    text = text.replace('ş', 'ș')
+    text = text.replace('ˮ', '“')
+    text = text.replace('ʼ', '’')
+
+    return text
+
+
 # Start API
 app = FastAPI()
 
@@ -33,6 +47,7 @@ async def shutdown_event():
 @app.get("/nerDosar/")
 async def inference_dosar(dosar: Dosar):
     sentence = dosar.text
+    sentence = clean_text(sentence)
 
     results = model.predict(sentence)
 

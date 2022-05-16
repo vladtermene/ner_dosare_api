@@ -42,6 +42,20 @@ MONEY_CHARS = '€$£'
 ALLOWED_CHARS = string.printable + ROM_SPECIAL_CHARS + PUNCTUATION_SPECIAL_CHARS + MONEY_CHARS
 
 
+def clean_text(text):
+    text = text.lower()
+
+    text = text.replace('Ţ', 'Ț')
+    text = text.replace('ţ', 'ț')
+    text = text.replace('–', '-')
+    text = text.replace('Ş', 'Ș')
+    text = text.replace('ş', 'ș')
+    text = text.replace('ˮ', '“')
+    text = text.replace('ʼ', '’')
+
+    return text
+
+
 # Concatenate input jsons
 json_dataset = []
 # Old
@@ -61,7 +75,7 @@ id_idx = 0
 for json_entry in tqdm(json_dataset, desc=f"Creating dataset"):
     sentence_dict = {'id': id_idx, 'ner_tags': [], 'ner_ids': [], 'tokens': [], 'space_after': []}
 
-    text = json_entry['data']['ner']
+    text = clean_text(json_entry['data']['ner'])
 
     annotations = json_entry['annotations'][-1]['result'] # -> list (UPDATE: O singura adnotare per exemplu)
     try:
@@ -92,7 +106,7 @@ for json_entry in tqdm(json_dataset, desc=f"Creating dataset"):
 
         current_idx = start_idx
                     
-        current_text_fragment = annot['text']
+        current_text_fragment = clean_text(annot['text'])
         doc = nlp(current_text_fragment)
 
         for sentence in doc.sentences:
