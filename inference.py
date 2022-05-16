@@ -36,7 +36,7 @@ async def startup_event():
     global model
 
     device = "cpu"
-    model = TransformerModel.load("trained_models/trained_model2/")
+    model = TransformerModel.load("trained_models/trained_model3/")
     model.set_device(device)
 
 @app.on_event("shutdown")
