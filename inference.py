@@ -47,9 +47,9 @@ async def shutdown_event():
 @app.get("/nerDosar/")
 async def inference_dosar(dosar: Dosar):
     sentence = dosar.text
-    sentence = clean_text(sentence)
+    cleaned_sentence = clean_text(sentence)
 
-    results = model.predict(sentence)
+    results = model.predict(cleaned_sentence)
 
     tokens = []
     tags =[]
