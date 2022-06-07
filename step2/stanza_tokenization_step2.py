@@ -68,12 +68,18 @@ for nume_fisier in os.listdir(os.path.join('dosare','new')):
     with open(os.path.join('dosare','new',nume_fisier)) as json_file:
         json_doc = json.load(json_file)
         json_dataset.extend(json_doc)
+# New 2
+with open(f'dosare/bejuri_prelucrate.json') as json_file:
+    json_doc = json.load(json_file)
+    json_dataset.extend(json_doc)
+
 
 output_json = []
 id_idx = 0
 
 for json_entry in tqdm(json_dataset, desc=f"Creating dataset"):
     sentence_dict = {'id': id_idx, 'ner_tags': [], 'ner_ids': [], 'tokens': [], 'space_after': []}
+    flag_caractere_dubioase = False
 
     text = clean_text(json_entry['data']['ner'])
 
@@ -81,8 +87,17 @@ for json_entry in tqdm(json_dataset, desc=f"Creating dataset"):
     try:
         sorted_annotations = sorted(annotations, key=lambda x: x['value']['start'])
     except:
-        if annotations['value']['end'] != len(text)-1:
-            continue
+        begin_idx, end_idx = annotations['value']['start'], annotations['value']['end']
+        if text[begin_idx:end_idx] != text:
+            cu = text[begin_idx:end_idx+1]
+            fara = text
+
+            if len(cu) != len(fara):
+                print('Eroare grava!')
+                continue
+
+            annotations['value']['end'] += 1
+
         sorted_annotations = [annotations]
 
     current_idx = 0
@@ -102,7 +117,8 @@ for json_entry in tqdm(json_dataset, desc=f"Creating dataset"):
                         sentence_dict['ner_ids'].append(0)
                         sentence_dict['space_after'].append(True if (current_idx+token.end_char<len(text) and text[current_idx+token.end_char] == ' ') else False)
                     else:
-                        print('Am gasit caractere dubioase')
+                        # print('Am gasit caractere dubioase')
+                        flag_caractere_dubioase = True
 
         current_idx = start_idx
                     
@@ -136,7 +152,8 @@ for json_entry in tqdm(json_dataset, desc=f"Creating dataset"):
                         sentence_dict['ner_ids'].append(LABEL_MAPPER[annot['labels'][0]]+1)
                     sentence_dict['space_after'].append(True if (current_idx+token.end_char<len(text) and text[current_idx+token.end_char] == ' ') else False)
                 else:
-                    print('Am gasit caractere dubioase')
+                    # print('Am gasit caractere dubioase')
+                    flag_caractere_dubioase = True
 
         current_idx = annot['end']
 
@@ -152,12 +169,16 @@ for json_entry in tqdm(json_dataset, desc=f"Creating dataset"):
                 sentence_dict['ner_ids'].append(0)
                 sentence_dict['space_after'].append(True if (current_idx+token.end_char<len(text) and text[current_idx+token.end_char] == ' ') else False)
             else:
-                print('Am gasit caractere dubioase')
+                # print('Am gasit caractere dubioase')
+                flag_caractere_dubioase = True
 
-    output_json.append(sentence_dict)
+    if not flag_caractere_dubioase:
+        output_json.append(sentence_dict)
 
     id_idx += 1
 
+
+print(f'Au fost eliminate {len(json_dataset)-len(output_json)} intrari din cauza caracterelor dubioase.')
 
 ####################################################################
 # Pentru a da export                                               #

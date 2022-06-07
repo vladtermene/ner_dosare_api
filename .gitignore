@@ -6,3 +6,6 @@ ner_dosare_venv/
 trained_models/
 
 dosare.zip
+
+dev.ipynb
+inference_copy.py
