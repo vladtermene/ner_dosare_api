@@ -12,6 +12,8 @@ from model_step2 import TransformerModel
 
 class Dosar(BaseModel):
     text: str
+class Dosare(BaseModel):
+    dosare: List[str]
 
 
 def clean_text(text):
@@ -133,3 +135,101 @@ async def inference_dosar(dosar: Dosar):
 
     return JSONResponse(status_code=200, content=response_json)
     
+
+@app.get("/nerDosarBatch/")
+async def inference_dosar(content: Dosare):
+    dosare = content.dosare
+
+    for i,parte in enumerate(dosare):
+        dosare[i] = clean_text(parte)
+
+    results = model.predict_batch(dosare)
+
+    tokens_batch = []
+    tags_batch = []
+    entities_batch = []
+
+    for idx,result in enumerate(results):
+        tokens = []
+        tags =[]
+        offset_mapping = []
+
+        # Tokens + Tags
+        for res in result[1:-1]:
+            # print(result)
+            if len(res['token']) > 2 and res['token'][0:2] == '##':
+                tokens[-1] += res['token'][2:]
+                offset_mapping[-1][1] = res['offset_mapping'][1]
+
+                lastTag = tags[-1] if len(tags) else 'O'
+                currTag = res['tag']
+
+                # Same class
+                if lastTag[2:] == currTag[2:]:
+                    pass
+                else:
+                    if lastTag == 'O' and currTag[0] == 'I':
+                        pass
+                    elif lastTag[0] == 'I' and currTag[0] == 'O':
+                        pass
+                    else:
+                        print('Token continuu, combinatie ciudata')
+            else:
+                lastTag = tags[-1] if len(tags) else 'O'
+                currTag = res['tag']
+
+                tokens.append(res['token'])
+                offset_mapping.append([res['offset_mapping'][0],res['offset_mapping'][1]])
+                
+                # Same label/class or 
+                # New class or 
+                # currTag O
+                if lastTag[2:] == currTag[2:] or \
+                currTag[0] == 'B' or \
+                currTag[0] == 'O':
+                    tags.append(res['tag'])
+                # currTag is I but different than last tag non-O
+                elif lastTag[0] == 'B' and currTag[0] == 'I' or \
+                    lastTag[0] == 'I' and currTag[0] == 'I':
+                    tags.append('I'+lastTag[1:])
+                # last is O but current is I
+                elif lastTag == 'O' and currTag[0] == 'I':
+                    tags.append(lastTag)
+                else:
+                    print('Token individual, caz ciudat.')
+
+        # Entities
+        entities = {}
+        last_entity = ''
+        last_idx = 0
+
+        for i in range(len(tags)):
+            if len(tags[i]) > 1:
+                idx_start, idx_end = offset_mapping[i]
+
+                if tags[i][0] == 'B' or last_entity != tags[i][2:]:
+                    if tags[i][2:] not in entities:
+                        entities[tags[i][2:]] = []
+                    entities[tags[i][2:]].append(dosare[idx][idx_start:idx_end])
+                else:
+                    if tags[i][2:] not in entities:
+                        # Nu ar trb sa intre pe aici tho
+                        # LOGGER.error('EROARE. Nu ar trebui sa intre in aceasta parte de cod.')
+                        entities[tags[i][2:]] = ['']
+                    entities[tags[i][2:]][-1] = entities[tags[i][2:]][-1] + dosare[idx][last_idx:idx_start] + dosare[idx][idx_start:idx_end]
+
+                last_entity = tags[i][2:]
+                last_idx = idx_end
+
+        tokens_batch.append(tokens)
+        tags_batch.append(tags)
+        entities_batch.append(entities)
+
+    # Create the response body
+    response_json = {
+        'tokens': tokens_batch,
+        'tags': tags_batch,
+        'entities': entities_batch
+    }
+
+    return JSONResponse(status_code=200, content=response_json)

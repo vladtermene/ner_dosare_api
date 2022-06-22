@@ -21,6 +21,7 @@ class TransformerModel(pl.LightningModule):
             self.tokenizer_name = model_name
 
         print("Loading AutoModel [{}] ...".format(model_name))
+        print("Model output size is {}".format(len(bio2tag_list)))
         self.model_name = model_name
         self.tokenizer = AutoTokenizer.from_pretrained(self.tokenizer_name, strip_tokens=False)
         self.model = AutoModelForTokenClassification.from_pretrained(self.model_name, num_labels=len(bio2tag_list), ignore_mismatched_sizes=True)
@@ -231,6 +232,44 @@ class TransformerModel(pl.LightningModule):
                 "tag": self.bio2tag_list[ind],
                 "offset_mapping": offset_mapping[idx]
             })
+        return results
+
+    def predict_batch(self, input_strings):
+        self.eval()
+        self.freeze()
+        # input_ids = self.tokenizer.encode(input_string, add_special_tokens=True)
+
+        tokenized_text = self.tokenizer(input_strings, add_special_tokens=True, return_tensors="pt", padding=True, return_offsets_mapping=True)
+        input_ids = tokenized_text['input_ids'].to(self.device)
+        attention_masks = tokenized_text['attention_mask'].to(self.device)
+        tokens = []
+        for in_ids in input_ids:
+            tokens.append(self.tokenizer.convert_ids_to_tokens(in_ids))
+        offset_mapping = tokenized_text['offset_mapping']
+
+        # convert to tensors & run the model
+        # prepared_input_ids = torch.LongTensor(input_ids).to(self.device) # because batch_size = 1
+        with torch.no_grad():
+            output = self.model(input_ids=input_ids.to(self.device), attention_mask=attention_masks, return_dict=True)
+            logits = output["logits"]
+
+        # extract results
+        indices = torch.argmax(logits.detach().cpu(), dim=-1).tolist()  # reduce to [batch_size, seq_len] as list
+
+        results = []
+        for i in range(len(indices)):
+            temp_result = []
+            for idx, (tok_id, ind) in enumerate(zip(input_ids[i], indices[i])):
+                if attention_masks[i][idx] == 1:
+                    temp_result.append({
+                        "token_id": tok_id,
+                        "token": tokens[i][idx],
+                        "tag_id": ind,
+                        "tag": self.bio2tag_list[ind],
+                        "offset_mapping": offset_mapping[i][idx]
+                    })
+            results.append(temp_result)
+
         return results
 
     def on_save_checkpoint(self, checkpoint) -> None:
